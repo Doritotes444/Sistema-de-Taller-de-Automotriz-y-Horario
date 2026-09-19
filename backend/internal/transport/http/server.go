@@ -94,6 +94,7 @@ func NewServer(dependency Dependency) *http.Server {
 	protected.HandleFunc("GET /api/dashboard", dashboardHandler.Build)
 
 	root := http.NewServeMux()
+	root.HandleFunc("GET /{$}", index)
 	root.HandleFunc("GET /api/health", health)
 	root.HandleFunc("POST /api/session", authHandler.SignIn)
 	root.Handle("/api/", authMiddleware(issuer, userRepository, now)(protected))
@@ -106,6 +107,15 @@ func NewServer(dependency Dependency) *http.Server {
 		WriteTimeout:      settings.RequestTimeout,
 		IdleTimeout:       2 * settings.RequestTimeout,
 	}
+}
+
+func index(writer http.ResponseWriter, _ *http.Request) {
+	respond(writer, http.StatusOK, map[string]string{
+		"service": "Taller Automotriz API",
+		"status":  "online",
+		"version": "3.1-production",
+		"health":  "/api/health",
+	})
 }
 
 func health(writer http.ResponseWriter, _ *http.Request) {
