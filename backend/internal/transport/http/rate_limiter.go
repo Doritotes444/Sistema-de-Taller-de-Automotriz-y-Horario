@@ -191,7 +191,8 @@ func (l *LoginRateLimiter) Reset(ip, username string) {
 }
 
 // ExtractClientIP extracts the real client IP. If r.RemoteAddr is a trusted proxy
-// (e.g. 127.0.0.1, ::1, or docker internal network 172.x), it reads the first valid IP from X-Forwarded-For.
+// (e.g. 127.0.0.1, ::1, docker internal network 172.x, private IPs, or cloud CGNAT 100.64.0.0/10),
+// it reads the client IP from Cloudflare/Render headers (CF-Connecting-IP, Render-Client-IP) or X-Forwarded-For.
 func (l *LoginRateLimiter) ExtractClientIP(r *http.Request, trustedProxies []string) string {
 	remoteHost, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -199,6 +200,14 @@ func (l *LoginRateLimiter) ExtractClientIP(r *http.Request, trustedProxies []str
 	}
 
 	if isTrustedProxy(remoteHost, trustedProxies) {
+		for _, header := range []string{"CF-Connecting-IP", "Render-Client-IP", "X-Real-IP"} {
+			if val := strings.TrimSpace(r.Header.Get(header)); val != "" {
+				if ip := net.ParseIP(val); ip != nil {
+					return val
+				}
+			}
+		}
+
 		xff := r.Header.Get("X-Forwarded-For")
 		if xff != "" {
 			parts := strings.Split(xff, ",")
@@ -244,6 +253,11 @@ func isTrustedProxy(host string, trustedProxies []string) bool {
 	}
 
 	if ip.IsPrivate() {
+		return true
+	}
+
+	// 100.64.0.0/10 Carrier-Grade NAT (used by Render, AWS, container fabrics)
+	if ip4 := ip.To4(); ip4 != nil && ip4[0] == 100 && (ip4[1]&0xC0) == 64 {
 		return true
 	}
 
