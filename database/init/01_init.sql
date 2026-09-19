@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS status_transition (
 -- Seed bootstrap (Initial users: admin, jperez, lramirez with unique default passwords)
 SET @admin_username = 'admin';
 SET @admin_full_name = 'Administrador del taller';
-SET @admin_password_hash = '$2a$10$EjLrf0P/Gfphmo9vRIHEgON9B6r8.r8aP2VSVWhVreP6BfEylmnj2';
+SET @admin_password_hash = '$2a$10$tMeeXQiJtnQhKIFGVyGvruqrrHmMngfapeJi1CLdyNDBHGvikbrJC';
 SET @technician_one_username = 'jperez';
 SET @technician_one_full_name = 'Juan Perez';
 SET @technician_one_password_hash = '$2a$10$2ipP7WWfcxuxwxRmsxgpV.8/WYEkFTTPLp0shEUFuiz3rTQlk2oJi';
