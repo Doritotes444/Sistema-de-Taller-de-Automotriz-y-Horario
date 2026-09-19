@@ -13,14 +13,18 @@ import (
 const serviceOrderColumn = "id, order_number, vehicle_id, reported_failure, status, received_at, created_at, updated_at"
 
 const serviceOrderSummarySelect = "SELECT so.id, so.order_number, so.vehicle_id, so.reported_failure, so.status, " +
-	"so.received_at, so.created_at, so.updated_at, v.plate, COALESCE(u.full_name, '') " +
+	"so.received_at, so.created_at, so.updated_at, v.plate, " +
+	"COALESCE((" +
+	"    SELECT u2.full_name " +
+	"    FROM assignment a2 " +
+	"    JOIN technician t2 ON t2.id = a2.technician_id " +
+	"    JOIN `user` u2 ON u2.id = t2.user_id " +
+	"    WHERE a2.service_order_id = so.id " +
+	"    ORDER BY a2.is_active DESC, a2.assigned_at DESC " +
+	"    LIMIT 1" +
+	"), '') AS technician_name " +
 	"FROM service_order so " +
-	"JOIN vehicle v ON v.id = so.vehicle_id " +
-	"LEFT JOIN assignment a ON a.id = (" +
-	"    SELECT a2.id FROM assignment a2 WHERE a2.service_order_id = so.id ORDER BY a2.is_active DESC, a2.assigned_at DESC LIMIT 1" +
-	") " +
-	"LEFT JOIN technician t ON t.id = a.technician_id " +
-	"LEFT JOIN `user` u ON u.id = t.user_id"
+	"JOIN vehicle v ON v.id = so.vehicle_id"
 
 // ServiceOrderRepository persists service orders and their status history.
 type ServiceOrderRepository struct {
