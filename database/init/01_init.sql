@@ -1,5 +1,8 @@
 -- Consolidated MySQL initialization script
--- Automatically executed on container first boot by MySQL official image.
+-- Automatically executed on container first boot or cloud database setup.
+
+CREATE DATABASE IF NOT EXISTS workshop;
+USE workshop;
 
 -- 0001_create_user
 CREATE TABLE IF NOT EXISTS `user` (
