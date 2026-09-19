@@ -113,7 +113,7 @@ func index(writer http.ResponseWriter, _ *http.Request) {
 	respond(writer, http.StatusOK, map[string]string{
 		"service": "Taller Automotriz API",
 		"status":  "online",
-		"version": "3.1-production",
+		"version": "3.1-v2",
 		"health":  "/api/health",
 	})
 }

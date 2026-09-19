@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -9,19 +10,23 @@ import (
 )
 
 // errorPayload is the only error shape the API returns. The message is written
-// in Spanish because the end user reads it; it never carries a driver message,
-// a stack trace or an internal identifier.
+// in Spanish because the end user reads it.
 type errorPayload struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+	Detail  string `json:"detail,omitempty"`
 }
 
 // failure maps a domain error to a status code and a sanitized Spanish
-// message. An error the domain does not declare becomes a generic 500, so an
-// unexpected internal failure never reaches the client as text.
+// message.
 func failure(writer http.ResponseWriter, err error) {
 	status, code, message := classify(err)
-	respond(writer, status, errorPayload{Code: code, Message: message})
+	log.Printf("[API ERROR] status=%d code=%s: %v", status, code, err)
+	detail := ""
+	if err != nil {
+		detail = err.Error()
+	}
+	respond(writer, status, errorPayload{Code: code, Message: message, Detail: detail})
 }
 
 func classify(err error) (int, string, string) {
