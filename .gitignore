@@ -1,0 +1,40 @@
+# Environment and Secrets (CRITICAL)
+.env
+*.env.local
+*.env.*.local
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Go / Backend binaries and caches
+backend/bin/
+backend/out/
+backend/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker data (if any volume mounted to host)
+mysql_data/
+docker_data/

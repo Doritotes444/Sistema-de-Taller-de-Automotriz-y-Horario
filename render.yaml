@@ -1,0 +1,37 @@
+services:
+  # Backend API (Go 1.25 / Docker)
+  - type: web
+    name: taller-automotriz-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ALLOWED_ORIGIN
+        value: "*"
+      - key: TOKEN_SECRET
+        generateValue: true
+      - key: TOKEN_TTL_MINUTE
+        value: 480
+      - key: REQUEST_TIMEOUT_SECOND
+        value: 15
+      - key: DATABASE_TIMEOUT_SECOND
+        value: 5
+      - key: DATABASE_URL
+        sync: false
+
+  # Frontend Web App (React / Vite Static Site with SPA Rewrites)
+  - type: web
+    name: taller-automotriz-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: "" # Configurar con la URL pública generada por el backend en Render

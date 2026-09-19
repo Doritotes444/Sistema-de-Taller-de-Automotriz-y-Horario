@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: workshop_db
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-workshop_root_pass_2026}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-workshop}
+      MYSQL_USER: ${MYSQL_USER:-workshop_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-workshop_pass_2026}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: workshop_backend
+    restart: unless-stopped
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-workshop}
+      MYSQL_USER: ${MYSQL_USER:-workshop_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-workshop_pass_2026}
+      HTTP_PORT: ${HTTP_PORT:-8080}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:8080}
+      TOKEN_SECRET: ${TOKEN_SECRET:-c29tZV9zdXBlcl9zZWNyZXRfdG9rZW5fa2V5XzIwMjZfYXV0b21vdGl2ZQ==}
+      TOKEN_TTL_MINUTE: ${TOKEN_TTL_MINUTE:-480}
+      REQUEST_TIMEOUT_SECOND: ${REQUEST_TIMEOUT_SECOND:-15}
+      DATABASE_TIMEOUT_SECOND: ${DATABASE_TIMEOUT_SECOND:-5}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: workshop_frontend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
