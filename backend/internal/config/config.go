@@ -3,8 +3,10 @@ package config
 import (
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,7 +29,9 @@ func Load() (Config, error) {
 	if dsn == "" {
 		dsn = os.Getenv("MYSQL_URL")
 	}
-	if dsn == "" {
+	if dsn != "" {
+		dsn = normalizeDSN(dsn)
+	} else {
 		host, err := required("MYSQL_HOST")
 		if err != nil {
 			return Config{}, err
@@ -100,4 +104,36 @@ func positiveNumber(name string, fallback int) int {
 		return fallback
 	}
 	return parsed
+}
+
+// normalizeDSN converts standard cloud connection strings (mysql://user:pass@host:port/db)
+// into the format expected by go-sql-driver/mysql (user:pass@tcp(host:port)/db?params).
+func normalizeDSN(raw string) string {
+	if !strings.HasPrefix(raw, "mysql://") {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	user := u.User.Username()
+	password, _ := u.User.Password()
+	host := u.Host
+	dbName := strings.TrimPrefix(u.Path, "/")
+	query := u.Query()
+	if query.Get("parseTime") == "" {
+		query.Set("parseTime", "true")
+	}
+	if query.Get("charset") == "" {
+		query.Set("charset", "utf8mb4")
+	}
+	if query.Get("loc") == "" {
+		query.Set("loc", "UTC")
+	}
+	if query.Get("tls") == "" {
+		query.Set("tls", "true")
+	}
+	// TiDB Cloud uses ?ssl-mode=REQUIRED, but Go driver uses tls=true
+	query.Del("ssl-mode")
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", user, password, host, dbName, query.Encode())
 }
